@@ -1,10 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import ItemLink from 'common/ItemLink';
-
+import SPECS from 'common/SPECS';
+import ROLES from 'common/ROLES';
 import fetchWcl from 'common/fetchWcl';
 
+import ItemLink from 'common/ItemLink';
+import SpellLink from 'common/SpellLink';
+import SpellIcon from 'common/SpellIcon';
+import { formatPercentage } from 'common/format';
+
+
+/*
+  Show statistics (talents, trinkets, legendaries) for the current boss, specID and difficulty
+*/
 
 class TopTalentsDisplay extends React.PureComponent {
   static propTypes = {
@@ -14,12 +23,15 @@ class TopTalentsDisplay extends React.PureComponent {
   };
 
   LIMIT = 100;
+  SHOW_TOP_ENTRYS = 8;
+  metric = 'dps';
 
   constructor() {
     super();
     this.state = {
       mostUsedTrinkets: [],
       mostUsedLegendaries: [],
+      mostUsedTalents: [],
       loaded: false,
     };
   }
@@ -41,100 +53,119 @@ class TopTalentsDisplay extends React.PureComponent {
   }
 
   load() {
-
-    console.log(this.props.specID);
-
-    let specID = 0;
-    let classID = 0;
-    if (this.props.specID === 250) {
-      specID = 1;
-      classID = 1;
+    switch (SPECS[this.props.specID].role) {
+      case ROLES.HEALER:
+        this.metric = 'hps';
+        break;
+    
+      default:
+        this.metric = 'dps';
+        break;
     }
 
     return fetchWcl(`rankings/encounter/${ this.props.currentBoss }`, {
-      class: specID,
-      spec: specID,
+      class: SPECS[this.props.specID].ranking.class,
+      spec: SPECS[this.props.specID].ranking.spec,
       difficulty: this.props.difficulty,
       limit: this.LIMIT,
+      metric: this.metric,
     }).then((stats) => {
-      console.info(stats);
-
-      let talentCounter = [[], [], [], [], [], [], []];
-      let trinketCounter = [];
-      let legendaryCounter = [];
+      const talentCounter = [[], [], [], [], [], [], []];
+      const talents = [];
+      let trinkets = [];
+      let legendaries = [];
       stats.rankings.forEach((rank, rankIndex) => {
         rank.talents.forEach((talent, index) => {
-          if (talent.id !== null && talent.id !== 0) { //when logged without advanced logging || no talent selected in that row (happens due to class rings)
+          if (talent.id !== null && talent.id !== 0) {
             talentCounter[index].push(talent.id);
           }
         });
 
         rank.gear.forEach((item, itemSlot) => {
           if (item.quality === 'legendary') {
-            legendaryCounter = this.addItem(legendaryCounter, item);
+            legendaries = this.addItem(legendaries, item);
           }
 
           if (itemSlot === 12 || itemSlot === 13) {
-            trinketCounter = this.addItem(trinketCounter, item);
+            trinkets = this.addItem(trinkets, item);
           }
         });
       });
 
       talentCounter.forEach(row => {
-        let talentRow = row.reduce(function(prev, cur) {
+        const talentRow = row.reduce((prev, cur) => {
           prev[cur] = (prev[cur] || 0) + 1;
           return prev;
         }, {});
-
-        //'talentRow' contains picked talents with amount of logs
+        talents.push(talentRow);
       });
 
-      console.info(trinketCounter);
-
-      trinketCounter.sort(function(a,b) {return (a.amount < b.amount) ? 1 : ((b.amount < a.amount) ? -1 : 0);} );
-      legendaryCounter.sort(function(a,b) {return (a.amount < b.amount) ? 1 : ((b.amount < a.amount) ? -1 : 0);} );
+      trinkets.sort((a,b) => {return (a.amount < b.amount) ? 1 : ((b.amount < a.amount) ? -1 : 0);} );
+      legendaries.sort((a,b) => {return (a.amount < b.amount) ? 1 : ((b.amount < a.amount) ? -1 : 0);} );
 
       this.setState({
-        mostUsedTrinkets: trinketCounter.slice(0, 5),
-        mostUsedLegendaries: legendaryCounter.slice(0, 5),
+        mostUsedTrinkets: trinkets.slice(0, this.SHOW_TOP_ENTRYS),
+        mostUsedLegendaries: legendaries.slice(0, this.SHOW_TOP_ENTRYS),
+        mostUsedTalents: talents,
         loaded: true,
       });
-
-      console.info(this.state.mostUsedLegendaries);
-      console.info(this.state.mostUsedTrinkets);
-
     });
   }
 
   // This is a special module, we're giving it a custom position. Normally we'd use "statistic" instead.
   render() {
 
+    const rows = [15, 30, 45, 60, 75, 90, 100];
+
     if (this.state.loaded) {
       return (
-        <div className="panel" style={{ border: 0, marginTop: 40 }}>
-          <div className="panel-body flex-main">
+        <div style={{ border: 0, marginTop: 40 }}>
+          <div className="panel-heading results btn-link selected" style={{ padding: 20, marginTop: 60 }}>
+            <h2>This shows statistics of the top { this.LIMIT } logs, ranked by { this.metric.toLocaleUpperCase() }</h2>
+          </div>
+          <div className="flex-main">
             <div className="row">
-              <div className="col-md-6">
-                <div className="panel-heading" style={{ boxShadow: 'none', borderBottom: 0 }}>
-                  <h2>Most used Legendaries</h2>
-                </div>
-                {this.state.mostUsedLegendaries.map((legendary) =>
-                  <div key={legendary.id}>
-                  <ItemLink id={legendary.id}>
-                    {legendary.name} ({legendary.amount}x)
-                  </ItemLink>
-                </div>
-                )}
-              </div>
-              <div className="col-md-6">
-                <div className="panel-heading" style={{ boxShadow: 'none', borderBottom: 0 }}>
-                  <h2>Most used Trinkets</h2>
-                </div>
-                {this.state.mostUsedTrinkets.map((trinket) =>
-                  <div key={trinket.id}>
-                    <ItemLink id={trinket.id}>
-                      {trinket.name} ({trinket.amount}x)
+              <div className="col-md-5">
+                <div>
+                  <div className="panel-heading" style={{ boxShadow: 'none', borderBottom: 0 }}>
+                    <h2>Most used Legendaries</h2>
+                  </div>
+                  {this.state.mostUsedLegendaries.map((legendary) =>
+                    <div key={legendary.id} style={{ paddingLeft: 20 }}>
+                    <ItemLink id={legendary.id} className={ legendary.quality }>
+                      {legendary.name} ({formatPercentage(legendary.amount / this.LIMIT, 0)}%)
                     </ItemLink>
+                  </div>
+                  )}
+                </div>
+                <div>
+                  <div className="panel-heading" style={{ boxShadow: 'none', borderBottom: 0, marginTop: 40 }}>
+                    <h2>Most used Trinkets</h2>
+                  </div>
+                  {this.state.mostUsedTrinkets.map((trinket) =>
+                    <div key={trinket.id} style={{ paddingLeft: 20 }}>
+                      <ItemLink id={trinket.id} className={ trinket.quality }>
+                        {trinket.name} ({formatPercentage(trinket.amount / this.LIMIT, 0)}%)
+                      </ItemLink>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="col-md-7">
+                <div className="panel-heading" style={{ boxShadow: 'none', borderBottom: 0 }}>
+                  <h2>Most used Talents</h2>
+                </div>
+                {this.state.mostUsedTalents.map((row, index) => 
+                  <div className="row" key={index} style={{ marginBottom: 15, paddingLeft: 20 }}>
+                    <div className="col-md-1" style={{ lineHeight: '3em', textAlign: 'right'}}>{rows[index]}</div>
+                    {Object.keys(row).sort((a,b) => {return row[b]-row[a];}).map((talent, talentIndex) => 
+                      <div key={talentIndex} className="col-md-2" style={{ textAlign: 'center' }}>
+                        <SpellLink id={talent}>
+                          <SpellIcon style={{ width: '3em', height: '3em', opacity: (row[talent] / this.LIMIT + 0.3) }} id={talent} noLink />
+                        </SpellLink>
+                        <span style={{ textAlign: 'center', display: 'block' }}>{formatPercentage(row[talent] / this.LIMIT, 0)}%</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
