@@ -7,6 +7,7 @@ import Warning from 'common/Alert/Warning';
 
 import CombatLogParser from './CombatLogParser';
 import CHANGELOG from './CHANGELOG';
+import EncounterTips from './EncounterTips';
 
 export default {
   // The people that have contributed to this spec recently. People don't have to sign up to be long-time maintainers to be included in this list. If someone built a large part of the spec or contributed something recently to that spec, they can be added to the contributors list.
@@ -37,4 +38,6 @@ export default {
   parser: CombatLogParser,
   // The path to the current directory (relative form project root). This is used for generating a GitHub link directly to your spec's code.
   path: __dirname,
+  // Encounter based tips
+  tips: EncounterTips,
 };

@@ -43,6 +43,7 @@ import TalentsDisplay from './Modules/Features/TalentsDisplay';
 import Checklist from './Modules/Features/Checklist';
 
 import EncounterPanel from './Modules/Features/EncounterPanel';
+import EncounterTips from './Modules/EncounterTips';
 
 import CritEffectBonus from './Modules/Helpers/CritEffectBonus';
 
@@ -182,6 +183,7 @@ class CombatLogParser {
     checklist: Checklist,
 
     encounterPanel: EncounterPanel,
+    encounterTips: EncounterTips,
 
     // Items:
     // Legendaries:

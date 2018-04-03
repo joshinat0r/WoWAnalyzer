@@ -293,6 +293,10 @@ class Results extends React.Component {
 
           <div className="divider" />
 
+          { modules.encounterTips.render() }
+
+          <div className="divider" />
+
           <div className="row">
             <div className="col-md-12">
               {this.renderStatistics(results.statistics)}
