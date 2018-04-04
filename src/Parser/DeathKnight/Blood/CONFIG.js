@@ -40,4 +40,5 @@ export default {
   path: __dirname,
   // Encounter based tips
   tips: EncounterTips,
+  tipsDesc: 'or message joshinator#7267 on discord',
 };

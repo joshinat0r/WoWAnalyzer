@@ -10,6 +10,8 @@ import Expandable from 'Main/Expandable';
 import { formatNumber, formatPercentage, formatThousands } from 'common/format';
 import Wrapper from 'common/Wrapper';
 
+import EncounterTips from 'Parser/Core/Modules/EncounterTips';
+
 import performanceForThresholds from './performanceForThresholds';
 import calculateMedian from './calculateMedian';
 
@@ -190,6 +192,7 @@ class Checklist extends Analyzer {
         {this.rules
           .filter(this.whenFilter)
           .map(this.renderRule)}
+        <EncounterTips currentBoss={this.owner.fight.boss} difficulty={this.owner.fight.difficulty} spec={this.combatants.selected._combatantInfo.specID} />
       </Wrapper>
     );
   }

@@ -974,4 +974,16 @@ export default {
     name: 'Strength of the Sky',
     icon: 'spell_nature_unrelentingstorm',
   },
+
+  //Boss Abilities
+  REALITY_TEAR: {
+    id: 244016,
+    name: 'Reality Tear',
+    icon: 'inv_artifact_dimensionalrift',
+  },
+  BURSTING_DARKNESS: {
+    id: 244021,
+    name: 'Bursting Darkness',
+    icon: 'spell_fire_twilightflamestrike',
+  },
 };
