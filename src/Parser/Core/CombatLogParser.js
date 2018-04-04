@@ -112,6 +112,7 @@ import AggramarsConviction from './Modules/Items/Legion/AntorusTheBurningThrone/
 import SmolderingTitanguard from './Modules/Items/Legion/AntorusTheBurningThrone/SmolderingTitanguard';
 import DiimasGlacialAegis from './Modules/Items/Legion/AntorusTheBurningThrone/DiimasGlacialAegis';
 import RiftworldCodex from './Modules/Items/Legion/AntorusTheBurningThrone/RiftworldCodex';
+import EyeOfHounds from './Modules/Items/Legion/AntorusTheBurningThrone/EyeOfHounds';
 
 // Shared Buffs
 import Concordance from './Modules/Spells/Concordance';
@@ -247,6 +248,7 @@ class CombatLogParser {
     smolderingTitanguard: SmolderingTitanguard,
     diimasGlacialAegis: DiimasGlacialAegis,
     riftworldCodex: RiftworldCodex,
+    eyeOfHounds: EyeOfHounds,
 
     // Concordance of the Legionfall
     concordance: Concordance,
