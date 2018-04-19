@@ -65,11 +65,12 @@ class ApiRequestHandler {
   }
 
   get requestUrl() {
-    return `${this.req.params[0]}?${querystring.stringify(this.req.query)}`;
+    //encodeURI to keep / in the path but replace special-chars
+    return `${encodeURI(this.req.params[0])}?${querystring.stringify(this.req.query)}`;
   }
   async fetchFromWcl(cachedWclApiResponse) {
     const query = Object.assign({}, this.req.query, { api_key: this.apiKey });
-    const path = `v1/${this.req.params[0]}?${querystring.stringify(query)}`;
+    const path = `v1/${encodeURI(this.req.params[0])}?${querystring.stringify(query)}`;
     console.log('GET', path);
     try {
       const wclStart = Date.now();
