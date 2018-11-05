@@ -22,6 +22,7 @@ import DeathStrikeTiming from './modules/features/DeathStrikeTiming';
 import BoneShieldTimesByStacks from './modules/features/BoneShieldTimesByStacks';
 import DeathsCaress from './modules/core/DeathsCaress';
 import MitigationCheck from './modules/features/MitigationCheck';
+import DeathStrikeUsage from './modules/features/DeathStrikeUsage';
 
 // Resources
 import RunicPowerDetails from './modules/runicpower/RunicPowerDetails';
@@ -81,6 +82,7 @@ class CombatLogParser extends CoreCombatLogParser {
     boneShield: BoneShield,
     boneShieldTimesByStacks: BoneShieldTimesByStacks,
     deathsCaress: DeathsCaress,
+    deathStrikeUsage: DeathStrikeUsage,
 
     // DOT
     bloodplagueUptime: BloodPlagueUptime,
