@@ -4,8 +4,8 @@ import Tab from 'interface/others/Tab';
 import SPELLS from 'common/SPELLS/index';
 import { formatDuration } from 'common/format';
 
-const PRECISION = 500;
-const PHASE_LENGTH = 30 * (1000 / PRECISION); // 30sec phases + precision
+const PRECISION = 1000;
+const PHASE_LENGTH = 30; // 30sec phases + precision
 const BUFFER = 2500;
 const MAX_BUFFER = 5000;
 const MAX_OVERHEAL = 0.30;
@@ -21,8 +21,9 @@ class DeathStrikeUsage extends Analyzer {
   on_toPlayer_damage(event) {
     const second = Math.floor((event.timestamp - this.owner.fight.start_time) / PRECISION);
     this.damageTakenPerSecond[second] = {
-      amount: event.amount + (event.absorbed || 0),
+      amount: event.amount,
       timestamp: event.timestamp,
+      second: formatDuration(second),
     };
   }
 
@@ -44,12 +45,13 @@ class DeathStrikeUsage extends Analyzer {
   }
 
   rms(set) {
-    const sum = set.reduce((prev, curr) => prev + Math.pow(curr.amount, 2) / set.length, 0);
+    const sum = set.reduce((prev, curr) => {
+      return prev + Math.pow(curr.amount, 2) / set.length;
+    }, 0);
     return Math.sqrt(sum);
   }
 
-  plot() {
-
+  get perfectDeathStrikes() {
     this.mandatoryDeathStrikes = [];
     this.goodDeathStrikes = [];
 
@@ -58,7 +60,6 @@ class DeathStrikeUsage extends Analyzer {
       if (!this.damageTakenPerSecond[index]) {
         this.damageTakenPerSecond[index] = {
           amount: 0,
-          timestamp: index,
         };
       }
     }
@@ -66,30 +67,48 @@ class DeathStrikeUsage extends Analyzer {
     const phases = this.phases;
     phases.forEach(phase => {
       const rms = this.rms(phase);
+      let lastMandatoryDS = 0;
+
+      console.info("phase", phase, "rms", rms);
       
       phase.forEach(damage => {
-        if (damage.amount && damage.amount >= rms) {
-          this.mandatoryDeathStrikes.push(damage);
+        if (!damage.amount || damage.amount < rms) {
+          return;
+        } 
+
+        // console.info("passe size");
+        if (lastMandatoryDS !== 0 && damage.timestamp - lastMandatoryDS < 3000) {
+          this.mandatoryDeathStrikes.splice(-1,1);
         }
+
+        lastMandatoryDS = damage.timestamp;
+        this.mandatoryDeathStrikes.push(damage);
       });
     });
 
     // const time = formatDuration((event.timestamp - this.owner.fight.start_time) / 1000, 0);
 
-    this.mandatoryDeathStrikes.forEach(should => {
-      this.deathStrikeCast.forEach(did => {
-        const overhealPercent = (did.overheal || 0) / did.amount;
-        // const time = formatDuration((did.timestamp - this.owner.fight.start_time) / 1000, 2);
+    // this.mandatoryDeathStrikes.forEach(should => {
+    //   this.deathStrikeCast.forEach(did => {
+    //     const overhealPercent = (did.overheal || 0) / did.amount;
+    //     // const time = formatDuration((did.timestamp - this.owner.fight.start_time) / 1000, 2);
 
-        if (did.timestamp > should.timestamp && did.timestamp <= should.timestamp + BUFFER) { // DSs within 2.5sec
-          this.goodDeathStrikes.push(did);
-          return;
-        } else if (did.timestamp > should.timestamp && did.timestamp <= should.timestamp + MAX_BUFFER && overhealPercent <= MAX_OVERHEAL) { // DS within 5sec and with little overhealing
-          this.goodDeathStrikes.push(did);
-          return;
-        }
-      });
-    });
+    //     if (did.timestamp > should.timestamp && did.timestamp <= should.timestamp + BUFFER) { // DSs within 2.5sec
+    //       this.goodDeathStrikes.push(did);
+    //       return;
+    //     } else if (did.timestamp > should.timestamp && did.timestamp <= should.timestamp + MAX_BUFFER && overhealPercent <= MAX_OVERHEAL) { // DS within 5sec and with little overhealing
+    //       this.goodDeathStrikes.push(did);
+    //       return;
+    //     }
+    //   });
+    // });
+
+    console.info(this.mandatoryDeathStrikes);
+
+    return this.mandatoryDeathStrikes;
+  }
+
+  plot() {
 
     return (
       <div style={{ padding: 20 }}>

@@ -6,6 +6,7 @@ import { formatNumber, formatDuration } from 'common/format';
 import SPELLS from 'common/SPELLS/index';
 import SpellLink from 'common/SpellLink';
 import 'common/chartjs-plugin-vertical';
+import DeathStrikeUsage from 'parser/deathknight/blood/modules/features/DeathStrikeUsage';
 
 /**
  * Goal is to remove pressure from healers by selfhealing more when really needed (eg. at low health) / improving tanks reactive selfhealing timings
@@ -15,6 +16,9 @@ const GRAPH_PRECISION = 500;
 const TOOLTIP_TIMESTAMP = 2;
 
 class SelfHealTimingGraph extends Analyzer {
+  static dependencies = {
+    deathStrikeUsage: DeathStrikeUsage,
+  };
   
   _hpEvents = [];
   _deathEvents = [];
@@ -49,6 +53,10 @@ class SelfHealTimingGraph extends Analyzer {
     }, {});
 
     const selfheals = this._selfhealTimestamps.map(event => { 
+      return { seconds: Math.floor((event.timestamp - this.owner.fight.start_time) / GRAPH_PRECISION) - 1, ...event };
+    });
+
+    const shouldDeathstrike = this.deathStrikeUsage.perfectDeathStrikes.map(event => { 
       return { seconds: Math.floor((event.timestamp - this.owner.fight.start_time) / GRAPH_PRECISION) - 1, ...event };
     });
 
@@ -99,6 +107,15 @@ class SelfHealTimingGraph extends Analyzer {
       }
     });
 
+    const shouldDeathstrikeBySeconds = Object.keys(hpBySeconds).map(sec => {
+      const shouldDeathStrikeEvent = shouldDeathstrike.find(event => event.seconds === Number(sec));
+      if(!!shouldDeathStrikeEvent) {
+        return { hp: hpBySeconds[sec].percentage, ...shouldDeathStrikeEvent };
+      } else {
+        return undefined;
+      }
+    });
+
     const deathsBySeconds = Object.keys(hpBySeconds).map(sec => {
       const deathEvent = deaths.find(event => event.seconds === Number(sec));
       if(!!deathEvent) {
@@ -134,8 +151,16 @@ class SelfHealTimingGraph extends Analyzer {
           label: SELFHEAL_LABEL,
           data: selfHealCastsBySeconds.map(obj => !!obj ? obj.hp : undefined),
           backgroundColor: 'rgba(255, 255, 255, 0)',
-          pointBackgroundColor: 'rgba(255, 255, 255, 0.9)',
+          pointBackgroundColor: 'rgba(255, 255, 255, 0.4)',
           pointRadius: 4,
+        },
+        {
+          label: 'This is a spike',
+          data: shouldDeathstrikeBySeconds.map(obj => !!obj ? obj.hp : undefined),
+          backgroundColor: 'rgba(255, 255, 0, 0)',
+          pointBackgroundColor: 'rgba(255, 255, 0, 0.9)',
+          pointRadius: 4,
+          pointStyle: 'rect',
         },
       ],
     };
