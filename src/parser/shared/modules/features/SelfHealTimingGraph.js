@@ -56,7 +56,7 @@ class SelfHealTimingGraph extends Analyzer {
       return { seconds: Math.floor((event.timestamp - this.owner.fight.start_time) / GRAPH_PRECISION) - 1, ...event };
     });
 
-    const shouldDeathstrike = this.deathStrikeUsage.perfectDeathStrikes.map(event => { 
+    const missedDeathStrikes = this.deathStrikeUsage.missedDeathStrikes.map(event => { 
       return { seconds: Math.floor((event.timestamp - this.owner.fight.start_time) / GRAPH_PRECISION) - 1, ...event };
     });
 
@@ -107,10 +107,10 @@ class SelfHealTimingGraph extends Analyzer {
       }
     });
 
-    const shouldDeathstrikeBySeconds = Object.keys(hpBySeconds).map(sec => {
-      const shouldDeathStrikeEvent = shouldDeathstrike.find(event => event.seconds === Number(sec));
-      if(!!shouldDeathStrikeEvent) {
-        return { hp: hpBySeconds[sec].percentage, ...shouldDeathStrikeEvent };
+    const missedDeathStrikesBySeconds = Object.keys(hpBySeconds).map(sec => {
+      const missedDeathStrikesEvent = missedDeathStrikes.find(event => event.seconds === Number(sec));
+      if(!!missedDeathStrikesEvent) {
+        return { hp: hpBySeconds[sec].percentage, ...missedDeathStrikesEvent };
       } else {
         return undefined;
       }
@@ -128,9 +128,18 @@ class SelfHealTimingGraph extends Analyzer {
     const DEATH_LABEL = 'Player Death';
     const SELFHEAL_LABEL = selfHealSpell.name + ' Cast';
     const HP_LABEL = 'Health';
+    const MISSED_HEAL_LABEL = 'I need H E A L I N G';
+
     const chartData = {
       labels,
       datasets: [ 
+        {
+          label: SELFHEAL_LABEL,
+          data: selfHealCastsBySeconds.map(obj => !!obj ? obj.hp : undefined),
+          backgroundColor: 'rgba(255, 255, 255, 0)',
+          pointBackgroundColor: 'rgba(255, 255, 255, 0.9)',
+          pointRadius: 5,
+        },
         {
           label: DEATH_LABEL,
           borderColor: '#ff2222',
@@ -148,19 +157,12 @@ class SelfHealTimingGraph extends Analyzer {
           pointStyle: 'rect',
         },
         {
-          label: SELFHEAL_LABEL,
-          data: selfHealCastsBySeconds.map(obj => !!obj ? obj.hp : undefined),
-          backgroundColor: 'rgba(255, 255, 255, 0)',
-          pointBackgroundColor: 'rgba(255, 255, 255, 0.4)',
-          pointRadius: 4,
-        },
-        {
-          label: 'This is a spike',
-          data: shouldDeathstrikeBySeconds.map(obj => !!obj ? obj.hp : undefined),
-          backgroundColor: 'rgba(255, 255, 0, 0)',
-          pointBackgroundColor: 'rgba(255, 255, 0, 0.9)',
-          pointRadius: 4,
-          pointStyle: 'rect',
+          label: MISSED_HEAL_LABEL,
+          data: missedDeathStrikesBySeconds.map(obj => !!obj ? obj.hp : undefined),
+          verticalLine: true,
+          pointStyle: 'line',
+          borderColor: 'rgba(0, 209, 0, .3)',
+          borderWidth: 8,
         },
       ],
     };
@@ -190,6 +192,8 @@ class SelfHealTimingGraph extends Analyzer {
       switch(dataset.label) {
         case DEATH_LABEL:
           return `Player died when hit by ${safeAbilityName(deathsBySeconds[index].ability)} at ${formatNumber(deathsBySeconds[index].hp)}% HP.`;
+        case MISSED_HEAL_LABEL:
+          return `You should've deathstriked here to help your healers.`;
         case SELFHEAL_LABEL:
           return tooltip(selfHealCastsBySeconds[index]);
         default:
