@@ -33,6 +33,7 @@ class SelfHealTimingGraph extends Analyzer {
   selfHealSpell = SPELLS.HEALTHSTONE;
   tabTitle = "Selheal Timing";
   tabURL = 'selfheal-timings';
+  badSelfHeals = []; // array of bad healing events
 
   on_toPlayer_death(event) {
     this._deathEvents.push(event);
@@ -79,6 +80,22 @@ class SelfHealTimingGraph extends Analyzer {
         };
       });
 
+    const _badCasts = this.badSelfHeals.map(event => {
+      const startingHP = event.hitPoints - (event.amount || 0) + (event.absorbed || 0) + (event.absorb || 0);
+      const p = (startingHP / event.maxHitPoints) || 0;
+      const percentage = Math.min(Math.round(p * 100), 100);
+
+      return {
+        x: event.timestamp,
+        y: percentage,
+        ability: event.ability,
+        amount: event.amount || 0,
+        overheal: event.overheal || 0,
+        hitPoints: startingHP,
+        info: event.info,
+      };
+    });
+
     const _casts = this._selfhealTimestamps.map(event => {
       const startingHP = event.hitPoints - (event.amount || 0) + (event.absorbed || 0) + (event.absorb || 0);
       const p = (startingHP / event.maxHitPoints) || 0;
@@ -98,6 +115,7 @@ class SelfHealTimingGraph extends Analyzer {
         <SelfHealChart
           selfHealSpell={this.selfHealSpell}
           casts={_casts}
+          badCasts={_badCasts}
           hp={_hp}
           deaths={_deaths}
           startTime={this.owner.fight.start_time}
@@ -133,6 +151,7 @@ class SelfHealChart extends React.Component {
     hp: PropTypes.array.isRequired,
     casts: PropTypes.array.isRequired,
     deaths: PropTypes.array.isRequired,
+    badCasts: PropTypes.array,
   };
 
   state = {
@@ -148,7 +167,7 @@ class SelfHealChart extends React.Component {
   };
 
   render() {
-    const { selfHealSpell, startTime, hp, casts, deaths } = this.props;
+    const { selfHealSpell, startTime, hp, casts, deaths, badCasts } = this.props;
     return (
       <XYPlot
         height={300}
@@ -190,6 +209,13 @@ class SelfHealChart extends React.Component {
           onValueMouseOver={d => this.setState({ hoveredCast: d })}
           onValueMouseOut={() => this.setState({ hoveredCast: null })}
         />
+        <MarkSeries
+          data={badCasts}
+          color="#ff0000"
+          size={3}
+          onValueMouseOver={d => this.setState({ hoveredCast: d })}
+          onValueMouseOut={() => this.setState({ hoveredCast: null })}
+        />
         {deaths.map(death => (
           <VerticalLine
             value={death.timestamp}
@@ -213,7 +239,8 @@ class SelfHealChart extends React.Component {
               <strong>{formatDuration((this.state.hoveredCast.x - startTime) / 1000)}</strong><br />
               {selfHealSpell.name} for {formatNumber(this.state.hoveredCast.amount)}
               {this.state.hoveredCast.overheal > 0 && ` (${formatNumber(this.state.hoveredCast.overheal)} overhealing)`}
-              &nbsp;at {formatNumber(this.state.hoveredCast.hitPoints)} HP ({this.state.hoveredCast.y}%)
+              &nbsp;at {formatNumber(this.state.hoveredCast.hitPoints)} HP ({this.state.hoveredCast.y}%)<br />
+              {this.state.hoveredCast.info && this.state.hoveredCast.info.map(line => <div>{line}</div>)}
             </div>
           </Hint>
         )}
