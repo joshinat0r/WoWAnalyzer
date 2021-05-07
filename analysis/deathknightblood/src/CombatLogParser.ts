@@ -44,6 +44,7 @@ import RelishInBlood from './modules/talents/RelishInBlood';
 import Tombstone from './modules/talents/Tombstone';
 import Voracious from './modules/talents/Voracious';
 import WillOfTheNecropolis from './modules/talents/WillOfTheNecropolis';
+import DeathStrikeUsage from './modules/features/DeathStrikeUsage/DeathStrikeUsage';
 
 class CombatLogParser extends CoreCombatLogParser {
   static specModules = {
@@ -54,6 +55,7 @@ class CombatLogParser extends CoreCombatLogParser {
     abilities: Abilities,
     channeling: Channeling,
     globalCooldown: GlobalCooldown,
+    deathStrikeUsage: DeathStrikeUsage,
 
     // Features
     alwaysBeCasting: AlwaysBeCasting,
