@@ -10,8 +10,11 @@ import DeathStrikeUsagePlot from './DeathStrikeUsagePlot'
 interface DeathStrikePoint {
   rp: number;
   hp: number;
+  heal: number;
+  bad: boolean;
   ignore: boolean;
   cap: boolean;
+  score: number;
 }
 
 class DeathStrikeUsage extends Analyzer {
@@ -37,15 +40,21 @@ class DeathStrikeUsage extends Analyzer {
     }
 
     const beforeHealHp = (event.hitPoints || 0) - (event.amount || 0);
-    const currentHp = beforeHealHp / (event.maxHitPoints || 0);
+    const currentHp = beforeHealHp / (event.maxHitPoints || 0) * 100;
     const ignore = this.selectedCombatant.hasBuff(SPELLS.SWARMING_MIST.id, event.timestamp);
     const cap = resource.max - 20 <= resource.amount;
+    const rp = resource.amount / 10;
+    const heal = (event.amount || 0) / (event.maxHitPoints || 0) * 100;
+    const score = rp >= 80 || currentHp <= 45 ? 0 : currentHp / rp
 
     this.deathStrikes.push({
-      rp: resource.amount / 10,
       hp: currentHp,
+      rp,
+      heal,
+      bad: rp <= 80 && currentHp >= 60,
       ignore,
       cap,
+      score
     });
   }
 
@@ -56,9 +65,19 @@ class DeathStrikeUsage extends Analyzer {
   tab() {
     return {
       title: 'DS Plot',
-      url: 'DS Plot',
-      render: () => <Panel style={{ padding: '15px 22px' }}>
-        <h1>Death Strike Plot</h1>
+      url: 'ds-plot',
+      render: () => <Panel
+        style={{ padding: '15px 22px' }}
+        title="Death Strike Plot"
+        explanation={
+          <>
+            This plot shows you your Death Strike casts based on your HP and RP.
+            <br />
+            Ideally you'd try to avoid Death Strikes while you're at low RP and high HP, instead you should save the RP for when you need the DS.<br />
+            Transparent dots indicate casts where you are likely not RP limited (eg. during Swarming Mist); Red dots indicate how "bad" a DS was
+          </>
+        }
+      >
         <DeathStrikeUsagePlot dsData={this.deathStrikeData} />
       </Panel>,
     };
