@@ -15,6 +15,7 @@ interface DeathStrikePoint {
   ignore: boolean;
   cap: boolean;
   score: number;
+  time: string;
 }
 
 class DeathStrikeUsage extends Analyzer {
@@ -48,6 +49,7 @@ class DeathStrikeUsage extends Analyzer {
     const score = rp >= 80 || currentHp <= 45 ? 0 : currentHp / rp
 
     this.deathStrikes.push({
+      time: `${this.owner.formatTimestamp(event.timestamp)}`,
       hp: currentHp,
       rp,
       heal,
@@ -74,7 +76,8 @@ class DeathStrikeUsage extends Analyzer {
             This plot shows you your Death Strike casts based on your HP and RP.
             <br />
             Ideally you'd try to avoid Death Strikes while you're at low RP and high HP, instead you should save the RP for when you need the DS.<br />
-            Transparent dots indicate casts where you are likely not RP limited (eg. during Swarming Mist); Red dots indicate how "bad" a DS was
+            Transparent dots indicate casts where you are likely not RP limited (eg. during Swarming Mist); Red dots indicate how "bad" a DS was<br />
+            Red section = unnecessary DS; yellow = RP dumping; green = good DS
           </>
         }
       >

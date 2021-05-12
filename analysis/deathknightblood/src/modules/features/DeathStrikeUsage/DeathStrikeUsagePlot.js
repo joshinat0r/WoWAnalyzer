@@ -43,8 +43,15 @@ class DeathStrikeUsagePlot extends React.PureComponent {
     })
 
     const badSet = this.props.dsData.map(() => {
-      const hp = randomMinMax(60, 100)
-      const rp = randomMinMax(40, 80)
+      const goodie = randomMinMax(0, 2)
+      let hp = randomMinMax(60, 100)
+      let rp = randomMinMax(40, 85)
+
+      if (goodie <= 0.4) {
+        hp = randomMinMax(0, 100)
+        rp = randomMinMax(hp > 60 ? 80 : 40, 125)
+      }
+
       const score = rp >= 80 || hp <= 45 ? 0 : hp / rp
       return {
         hp,
@@ -58,6 +65,8 @@ class DeathStrikeUsagePlot extends React.PureComponent {
       <>
         <div className="ds-plot">
           <div className="ds-bad-batch" />
+          <div className="ds-good-batch" />
+          <div className="ds-dump-batch" />
           <div className="ds-plot-axis-y">
             <div style={{top: 0}}><b>HP</b> 100%</div>
             <div style={{top: '25%'}}>75%</div>
@@ -92,7 +101,7 @@ class DeathStrikeUsagePlot extends React.PureComponent {
                     left: `${(point.rp) / 1.5}%`,
                     backgroundColor: `hsl(0, 100%, ${100 - (point.score * 100 / 5)}%)`
                   }}
-                  title={`${point.hp.toFixed(1)}% HP / ${point.rp} RP`}
+                  title={`${point.time}: ${point.hp.toFixed(1)}% HP / ${point.rp} RP`}
                 ></div>
                 <div 
                   key={index} 
@@ -121,13 +130,13 @@ class DeathStrikeUsagePlot extends React.PureComponent {
               className="btn btn-primary"
               onMouseEnter={() => this.setState({ goodSet: true, badSet: false })}
               onMouseLeave={() => this.setState({ goodSet: false, badSet: false })}>
-              Good Set
+              Good Example
             </div>
             <div
               className="btn btn-primary"
               onMouseEnter={() => this.setState({ goodSet: false, badSet: true })}
               onMouseLeave={() => this.setState({ goodSet: false, badSet: false })}>
-              Bad Set
+              Bad Example
             </div>
           </div>
         </div>
